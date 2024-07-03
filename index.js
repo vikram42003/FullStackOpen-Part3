@@ -29,6 +29,16 @@ app.get("/api/persons", (req, res) => {
   res.json(persons);
 })
 
+app.get("/info", (req, res) => {
+  const htmlToSend = (
+    `<div>
+      <p>Phonebook has info for ${persons.length} ${persons.length === 1 ? "person" : "people"}</p>
+      <p>${new Date().toString()}</p>
+    </div>`
+  )
+  res.send(htmlToSend);
+})
+
 app.listen(PORT, () => {
   console.log(`Server is live on port ${PORT}`);
 })
