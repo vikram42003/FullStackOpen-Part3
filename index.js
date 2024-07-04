@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 3001;
 
-const persons = [
+let persons = [
   { 
     "id": "1",
     "name": "Arto Hellas", 
@@ -34,6 +34,19 @@ app.get("/api/persons/:id", (req, res) => {
   if (person) {
     res.json(person);
   } else {
+    res.status(404).end();
+  }
+})
+
+app.delete("/api/persons/:id", (req, res) => {
+  const oldLength = persons.length;
+
+  persons = persons.filter(p => p.id !== req.params.id);
+
+  if (oldLength !== persons.length) {
+    res.status(204).end();
+  } else {
+    res.statusMessage = `User with id ${req.params.id} does not exist on the server`;
     res.status(404).end();
   }
 })
