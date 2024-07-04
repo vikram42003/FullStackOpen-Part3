@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const PORT = 3001;
 
+app.use(express.json());
+
 let persons = [
   { 
     "id": "1",
@@ -25,6 +27,15 @@ let persons = [
   }
 ]
 
+function generateId() {
+  let id = (Math.random() * 1000).toFixed(0);
+  if (persons.find(p => p.id === id)) {
+    id = generateId();
+  } else {
+    return id;
+  }
+}
+
 app.get("/api/persons", (req, res) => {
   res.json(persons);
 })
@@ -36,6 +47,24 @@ app.get("/api/persons/:id", (req, res) => {
   } else {
     res.status(404).end();
   }
+})
+
+app.post("/api/persons/", (req, res) => {
+  if (!req.body.name || !req.body.number) {
+    return res.status(400).json({ 
+      error: 'name and/or number are missing' 
+    })
+  }
+
+  const newPerson = {
+    "id": generateId(),
+    "name": req.body.name,
+    "number": req.body.number
+  }
+
+  persons = persons.concat(newPerson);
+
+  res.json(newPerson);
 })
 
 app.delete("/api/persons/:id", (req, res) => {
