@@ -43,9 +43,12 @@ app.post("/api/persons", (req, res, next) => {
     number: req.body.number,
   });
 
-  newPerson.save().then(result => {
-    res.json(result);
-  });
+  newPerson
+    .save()
+    .then(result => {
+      res.json(result);
+    })
+    .catch(error => next(error));
 });
 
 app.put("/api/persons/:id", (req, res, next) => {
@@ -54,7 +57,7 @@ app.put("/api/persons/:id", (req, res, next) => {
     number: req.body.number,
   };
 
-  Person.findByIdAndUpdate(req.params.id, newPerson, { new: true })
+  Person.findByIdAndUpdate(req.params.id, newPerson, { new: true, runValidators: true, context: "query" })
     .then(result => {
       res.json(result);
     })
@@ -94,6 +97,8 @@ function errorHandler(error, req, res, next) {
     return res.status(400).json({ error: "malformatted id" });
   } else if (error.name === "name and/or number are missing") {
     return res.status(400).json({ error: error.name });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({ error: error.message });
   }
 
   next(error);
