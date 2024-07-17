@@ -21,25 +21,22 @@ app.get("/api/persons", (req, res) => {
   });
 });
 
-app.get("/api/persons/:id", (req, res) => {
-  Person.findById(req.params.id).then(result => {
-    res.json(result);
-  });
+app.get("/api/persons/:id", (req, res, next) => {
+  Person.findById(req.params.id)
+    .then(result => {
+      if (result) {
+        res.json(result);
+      } else {
+        res.status(404).json({ error: `Person with id: ${req.params.id} not found on the server` });
+      }
+    })
+    .catch(error => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   if (!req.body.name || !req.body.number) {
-    return res.status(400).json({
-      error: "name and/or number are missing",
-    });
+    next({ name: "name and/or number are missing" });
   }
-
-  // !!! Ignore duplicate names for now
-  // if (persons.find(p => p.name === req.body.name)) {
-  //   return res.status(409).json({
-  //     error: `person named ${req.body.name} already exists in the phonebook. name must be unique`
-  //   })
-  // }
 
   const newPerson = new Person({
     name: req.body.name,
@@ -51,6 +48,19 @@ app.post("/api/persons", (req, res) => {
   });
 });
 
+app.put("/api/persons/:id", (req, res, next) => {
+  const newPerson = {
+    name: req.body.name,
+    number: req.body.number,
+  };
+
+  Person.findByIdAndUpdate(req.params.id, newPerson, { new: true })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(error => next(error));
+});
+
 app.delete("/api/persons/:id", (req, res, next) => {
   Person.findByIdAndDelete(req.params.id)
     .then(result => {
@@ -59,15 +69,36 @@ app.delete("/api/persons/:id", (req, res, next) => {
     .catch(error => next(error));
 });
 
-// app.get("/info", (req, res) => {
-//   const htmlToSend = (
-//     `<div>
-//       <p>Phonebook has info for ${persons.length} ${persons.length === 1 ? "person" : "people"}</p>
-//       <p>${new Date().toString()}</p>
-//     </div>`
-//   )
-//   res.send(htmlToSend);
-// })
+app.get("/info", (req, res, next) => {
+  Person.find({})
+    .then(result => {
+      const total = result.length;
+      const htmlToSend = `<div>
+        <p>Phonebook has info for ${total} ${total === 1 ? "person" : "people"}</p>
+        <p>${new Date().toString()}</p>
+      </div>`;
+      res.send(htmlToSend);
+    })
+    .catch(error => next(error));
+});
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+app.use(unknownEndpoint);
+
+function errorHandler(error, req, res, next) {
+  console.log(error);
+
+  if (error.name === "CastError") {
+    return res.status(400).json({ error: "malformatted id" });
+  } else if (error.name === "name and/or number are missing") {
+    return res.status(400).json({ error: error.name });
+  }
+
+  next(error);
+}
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is live on port ${PORT}`);
