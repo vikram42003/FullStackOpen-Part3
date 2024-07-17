@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("dist"));
 
-morgan.token("content", (req, res) => (Object.keys(req.body).length ? JSON.stringify(req.body) : " "));
+morgan.token("content", req => (Object.keys(req.body).length ? JSON.stringify(req.body) : " "));
 app.use("*", morgan(":method :url :status :res[content-length] - :response-time ms :content"));
 
 app.get("/api/persons", (req, res) => {
